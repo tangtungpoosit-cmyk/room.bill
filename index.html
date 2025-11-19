@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>โปรแกรมคำนวณค่าไฟค่าน้ำ</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #f2f2f2;
+      padding: 20px;
+    }
+    .container {
+      background: #fff;
+      padding: 20px;
+      max-width: 450px;
+      margin: auto;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 16px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056c1;
+    }
+    .result {
+      background: #fafafa;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>โปรแกรมคำนวณค่าไฟค่าน้ำ</h2>
+
+    <label>ชื่อห้อง</label>
+    <input id="room" placeholder="เช่น A101" />
+
+    <label>เลขมิเตอร์ไฟครั้งก่อน</label>
+    <input id="old_elec" type="number" step="0.1" />
+
+    <label>เลขมิเตอร์ไฟครั้งนี้</label>
+    <input id="new_elec" type="number" step="0.1" />
+
+    <label>เลขมิเตอร์น้ำครั้งก่อน</label>
+    <input id="old_water" type="number" step="0.1" />
+
+    <label>เลขมิเตอร์น้ำครั้งนี้</label>
+    <input id="new_water" type="number" step="0.1" />
+
+    <label>ค่าห้อง</label>
+    <input id="room_cost" type="number" step="0.1" />
+
+    <button onclick="calc()">คำนวณ</button>
+
+    <button onclick="printPDF()">พิมพ์ใบเสร็จ (PDF)</button>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    function calc() {
+      const room = document.getElementById('room').value;
+      const old_elec = parseFloat(document.getElementById('old_elec').value);
+      const new_elec = parseFloat(document.getElementById('new_elec').value);
+      const old_water = parseFloat(document.getElementById('old_water').value);
+      const new_water = parseFloat(document.getElementById('new_water').value);
+      const room_cost = parseFloat(document.getElementById('room_cost').value);
+
+      const elec_rate = 7.0;
+      const water_rate = 16;
+
+      const elec_use = new_elec - old_elec;
+      const water_use = new_water - old_water;
+
+      const elec_cost = elec_use * elec_rate;
+      const water_cost = water_use * water_rate;
+      const total = elec_cost + water_cost + room_cost;
+
+      document.getElementById('result').textContent =
+        `=== ใบแจ้งค่าใช้จ่ายห้อง ${room} ===\n` +
+        `ใช้ไฟ: ${elec_use.toFixed(1)} หน่วย × ${elec_rate} บาท = ${elec_cost.toFixed(2)}\n` +
+        `ใช้น้ำ: ${water_use.toFixed(1)} หน่วย × ${water_rate} บาท = ${water_cost.toFixed(2)}\n` +
+        `ค่าห้อง: ${room_cost.toFixed(1)} บาท\n` +
+        `รวมทั้งสิ้น: ${total.toFixed(2)} บาท\n` +
+        `===========================`;
+    }
+  function printPDF() {
+      const printContent = document.getElementById('result').innerHTML;
+      const win = window.open('', '', 'width=600,height=800');
+      win.document.write(`<!DOCTYPE html><html><head><title>ใบเสร็จ</title>
+        <style>
+          body { font-family: 'Courier New', monospace; padding: 20px; }
+          pre { white-space: pre-line; font-size: 16px; font-family: 'Courier New', monospace; }
+        </style>
+      </head><body><pre>${printContent}</pre></body></html>`);
+      win.document.close();
+      win.print();
+    }
+  </script>
+</body>
+</html>
