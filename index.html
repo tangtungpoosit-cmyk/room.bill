@@ -72,6 +72,9 @@
       const new_water = parseInt(document.getElementById('new_water').value, 10);
       const room_cost = parseFloat(document.getElementById('room_cost').value);
 
+      if (new_elec < old_elec) { alert('เลขมิเตอร์ไฟครั้งใหม่ต้องไม่ต่ำกว่าเลขครั้งก่อน'); return; }
+      if (new_water < old_water) { alert('เลขมิเตอร์น้ำครั้งใหม่ต้องไม่ต่ำกว่าเลขครั้งก่อน'); return; }
+
       const elec_rate = 7.0;
       const water_rate = 16;
 
@@ -93,8 +96,8 @@
     function formatBill(data) {
       return `=== ใบแจ้งค่าใช้จ่ายห้อง ${data.room} ===\n` +
              `วันที่: ${data.date}\n` +
-             `เลขมิเตอร์ไฟ: ครั้งก่อน ${data.old_elec}, ครั้งนี้ ${data.new_elec}\n` +
-             `เลขมิเตอร์น้ำ: ครั้งก่อน ${data.old_water}, ครั้งนี้ ${data.new_water}\n` +
+             `เลขมิเตอร์ไฟ: ครั้งก่อน ${data.old_elec} ครั้งนี้ ${data.new_elec}\n` +
+             `เลขมิเตอร์น้ำ: ครั้งก่อน ${data.old_water} ครั้งนี้ ${data.new_water}\n` +
              `ใช้ไฟ: ${data.elec_use} หน่วย × 7 บาท = ${data.elec_cost.toFixed(2)}\n` +
              `ใช้น้ำ: ${data.water_use} หน่วย × 16 บาท = ${data.water_cost.toFixed(2)}\n` +
              `ค่าห้อง: ${data.room_cost.toFixed(1)} บาท\n` +
@@ -105,23 +108,27 @@
     function updateHistory() {
       const historyDiv = document.getElementById('history');
       historyDiv.innerHTML = '';
-      historyData.forEach((d, index) => {
+      historyData.forEach((d) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'history-item';
         itemDiv.innerHTML = `<pre>${formatBill(d)}</pre>` +
-                            `<button onclick='saveSingle(${index})'>บันทึกไฟล์</button>`;
+                            `<button onclick='printSingle(${historyData.indexOf(d)})'>พิมพ์ใบเสร็จ</button>`;
         historyDiv.appendChild(itemDiv);
       });
     }
 
-    function saveSingle(index) {
+    function printSingle(index) {
       const data = historyData[index];
-      const filename = `${data.room}-${data.date.substring(0,7)}.txt`;
-      const blob = new Blob([formatBill(data)], { type: 'text/plain;charset=utf-8' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
+      const printContent = formatBill(data);
+      const win = window.open('', '', 'width=600,height=800');
+      win.document.write(`<!DOCTYPE html><html><head><title>ใบเสร็จ</title>
+        <style>
+          @page { size: A5 portrait; margin: 20mm; }
+          body { font-family: 'Courier New', monospace; white-space: pre-line; font-size: 16px; }
+        </style>
+      </head><body><pre>${printContent}</pre></body></html>`);
+      win.document.close();
+      win.print();
     }
 
     function clearHistory() {
