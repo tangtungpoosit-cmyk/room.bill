@@ -7,7 +7,7 @@
   <style>
     body { font-family: 'Courier New', monospace; padding: 20px; background: #f2f2f2; }
     .container { background: #fff; padding: 20px; max-width: 600px; margin: auto; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    input, select { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; }
+    input, select { width: 100%; padding: 10px 15px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
     button { width: 100%; padding: 12px; background: #007bff; border: none; border-radius: 6px; color: white; font-size: 16px; margin-top: 10px; cursor: pointer; }
     button:hover { background: #0056c1; }
     .result { background: #fafafa; padding: 15px; margin-top: 20px; border-radius: 10px; border: 1px solid #ddd; white-space: pre-line; font-family: 'Courier New', monospace; font-size: 15px; }
@@ -25,6 +25,9 @@
 <body>
   <div class="container">
     <h2>โปรแกรมคำนวณค่าไฟค่าน้ำ</h2>
+
+    <label>ชื่อผู้เช่า</label>
+    <input id="tenant_name" placeholder="เช่น นายเอ / นางสาวบี" />
 
     <label>ชื่อห้อง</label>
     <input id="room" placeholder="เช่น 101" />
@@ -64,13 +67,18 @@
     let historyData = [];
 
     function calc() {
+      const tenant_name = document.getElementById('tenant_name').value;
       const room = document.getElementById('room').value;
       const date = document.getElementById('date').value;
       const old_elec = parseInt(document.getElementById('old_elec').value, 10);
       const new_elec = parseInt(document.getElementById('new_elec').value, 10);
       const old_water = parseInt(document.getElementById('old_water').value, 10);
       const new_water = parseInt(document.getElementById('new_water').value, 10);
-      const room_cost = parseFloat(document.getElementById('room_cost').value);
+      const room_cost = parseFloat(document.getElementById('room_cost').value) || 0;
+
+      if (isNaN(old_elec) || isNaN(new_elec) || isNaN(old_water) || isNaN(new_water)) {
+        alert('กรุณากรอกหมายเลขมิเตอร์ให้ครบ'); return;
+      }
 
       if (new_elec < old_elec) { alert('เลขมิเตอร์ไฟครั้งใหม่ต้องไม่ต่ำกว่าเลขครั้งก่อน'); return; }
       if (new_water < old_water) { alert('เลขมิเตอร์น้ำครั้งใหม่ต้องไม่ต่ำกว่าเลขครั้งก่อน'); return; }
@@ -85,7 +93,7 @@
       const water_cost = water_use * water_rate;
       const total = elec_cost + water_cost + room_cost;
 
-      currentData = { room, date, old_elec, new_elec, old_water, new_water, elec_use, water_use, elec_cost, water_cost, room_cost, total };
+      currentData = { tenant_name, room, date, old_elec, new_elec, old_water, new_water, elec_use, water_use, elec_cost, water_cost, room_cost, total };
 
       document.getElementById('result').textContent = formatBill(currentData);
 
@@ -94,25 +102,32 @@
     }
 
     function formatBill(data) {
-      return `=== ใบแจ้งค่าใช้จ่ายห้อง ${data.room} ===\n` +
-             `วันที่: ${data.date}\n` +
-             `เลขมิเตอร์ไฟ: ครั้งก่อน ${data.old_elec} ครั้งนี้ ${data.new_elec}\n` +
-             `เลขมิเตอร์น้ำ: ครั้งก่อน ${data.old_water} ครั้งนี้ ${data.new_water}\n` +
-             `ใช้ไฟ: ${data.elec_use} หน่วย × 7 บาท = ${data.elec_cost.toFixed(2)}\n` +
-             `ใช้น้ำ: ${data.water_use} หน่วย × 16 บาท = ${data.water_cost.toFixed(2)}\n` +
-             `ค่าห้อง: ${data.room_cost.toFixed(1)} บาท\n` +
-             `รวมทั้งสิ้น: ${data.total.toFixed(2)} บาท\n` +
-             `===========================`;
+      return `=== ใบแจ้ง/ใบเสร็จค่าใช้จ่าย ===
+ผู้เช่า: ${data.tenant_name || '-'}
+ห้อง: ${data.room || '-'}
+วันที่: ${data.date || '-'}
+
+เลขมิเตอร์ไฟ: ครั้งก่อน ${data.old_elec} ครั้งนี้ ${data.new_elec}
+เลขมิเตอร์น้ำ: ครั้งก่อน ${data.old_water} ครั้งนี้ ${data.new_water}
+
+ใช้ไฟ: ${data.elec_use} หน่วย × 7 บาท = ${data.elec_cost.toFixed(2)}
+ใช้น้ำ: ${data.water_use} หน่วย × 16 บาท = ${data.water_cost.toFixed(2)}
+
+ค่าห้อง: ${data.room_cost.toFixed(1)} บาท
+
+รวมทั้งสิ้น: ${data.total.toFixed(2)} บาท
+===========================`;
     }
 
     function updateHistory() {
       const historyDiv = document.getElementById('history');
       historyDiv.innerHTML = '';
-      historyData.forEach((d) => {
+
+      historyData.forEach((d, index) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'history-item';
-        itemDiv.innerHTML = `<pre>${formatBill(d)}</pre>` +
-                            `<button onclick='printSingle(${historyData.indexOf(d)})'>พิมพ์ใบเสร็จ</button>`;
+        itemDiv.innerHTML = `<pre>${formatBill(d)}</pre>
+                             <button onclick='printSingle(${index})'>พิมพ์ใบเสร็จ</button>`;
         historyDiv.appendChild(itemDiv);
       });
     }
@@ -120,6 +135,7 @@
     function printSingle(index) {
       const data = historyData[index];
       const printContent = formatBill(data);
+
       const win = window.open('', '', 'width=600,height=800');
       win.document.write(`<!DOCTYPE html><html><head><title>ใบเสร็จ</title>
         <style>
@@ -137,6 +153,7 @@
     }
 
     function clearInputs() {
+      document.getElementById('tenant_name').value = '';
       document.getElementById('room').value = '';
       document.getElementById('date').value = '';
       document.getElementById('old_elec').value = '';
@@ -148,8 +165,10 @@
     }
 
     function printPDF() {
-      if (!currentData.room) { alert('กรุณากดคำนวณก่อนพิมพ์'); return; }
+      if (!currentData.room && !currentData.tenant_name) { alert('กรุณากดคำนวณก่อนพิมพ์'); return; }
+
       const printContent = formatBill(currentData);
+
       const win = window.open('', '', 'width=600,height=800');
       win.document.write(`<!DOCTYPE html><html><head><title>ใบเสร็จ</title>
         <style>
