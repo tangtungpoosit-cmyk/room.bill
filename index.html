@@ -63,122 +63,106 @@
   </div>
 
   <script>
-    let currentData = {};
-    let historyData = [];
+// ===== ตัวแปรหลัก =====
+let currentData = {};
+let historyData = [];
 
-    function calc() {
-      const tenant_name = document.getElementById('tenant_name').value;
-      const room = document.getElementById('room').value;
-      const date = document.getElementById('date').value;
-      const old_elec = parseInt(document.getElementById('old_elec').value, 10);
-      const new_elec = parseInt(document.getElementById('new_elec').value, 10);
-      const old_water = parseInt(document.getElementById('old_water').value, 10);
-      const new_water = parseInt(document.getElementById('new_water').value, 10);
-      const room_cost = parseFloat(document.getElementById('room_cost').value) || 0;
+// ===== คำนวณ =====
+function calc() {
+  const tenant_name = document.getElementById('tenant_name').value;
+  const room = document.getElementById('room').value;
+  const date = document.getElementById('date').value;
+  const old_elec = parseInt(document.getElementById('old_elec').value, 10);
+  const new_elec = parseInt(document.getElementById('new_elec').value, 10);
+  const old_water = parseInt(document.getElementById('old_water').value, 10);
+  const new_water = parseInt(document.getElementById('new_water').value, 10);
+  const room_cost = parseFloat(document.getElementById('room_cost').value) || 0;
 
-      if (isNaN(old_elec) || isNaN(new_elec) || isNaN(old_water) || isNaN(new_water)) {
-        alert('กรุณากรอกหมายเลขมิเตอร์ให้ครบ'); return;
-      }
+  if ([old_elec, new_elec, old_water, new_water].some(isNaN)) {
+    alert('กรุณากรอกเลขมิเตอร์ให้ครบ');
+    return;
+  }
 
-      if (new_elec < old_elec) { alert('เลขมิเตอร์ไฟครั้งใหม่ต้องไม่ต่ำกว่าเลขครั้งก่อน'); return; }
-      if (new_water < old_water) { alert('เลขมิเตอร์น้ำครั้งใหม่ต้องไม่ต่ำกว่าเลขครั้งก่อน'); return; }
+  if (new_elec < old_elec || new_water < old_water) {
+    alert('เลขมิเตอร์ใหม่ต้องมากกว่าหรือเท่าครั้งก่อน');
+    return;
+  }
 
-      const elec_rate = 7.0;
-      const water_rate = 16;
+  const elec_rate = 7;
+  const water_rate = 16;
 
-      const elec_use = new_elec - old_elec;
-      const water_use = new_water - old_water;
+  const elec_use = new_elec - old_elec;
+  const water_use = new_water - old_water;
 
-      const elec_cost = elec_use * elec_rate;
-      const water_cost = water_use * water_rate;
-      const total = elec_cost + water_cost + room_cost;
+  const elec_cost = elec_use * elec_rate;
+  const water_cost = water_use * water_rate;
+  const total = elec_cost + water_cost + room_cost;
 
-      currentData = { tenant_name, room, date, old_elec, new_elec, old_water, new_water, elec_use, water_use, elec_cost, water_cost, room_cost, total };
+  currentData = {
+    tenant_name, room, date,
+    elec_use, water_use,
+    elec_cost, water_cost,
+    room_cost, total
+  };
 
-      document.getElementById('result').textContent = formatBill(currentData);
+  document.getElementById('result').innerHTML = formatBillTable(currentData);
 
-      historyData.push(currentData);
-      updateHistory();
-    }
+  historyData.push(currentData);
+  updateHistory();
+}
 
-    function formatBill(data) {
-      return `=== ใบแจ้ง/ใบเสร็จค่าใช้จ่าย ===
-ผู้เช่า: ${data.tenant_name || '-'}
-ห้อง: ${data.room || '-'}
-วันที่: ${data.date || '-'}
+// ===== แสดงใบเสร็จแบบตาราง =====
+function formatBillTable(d) {
+  return `
+  <table style="width:100%; border-collapse:collapse;">
+    <tr><th colspan="2" style="border:1px solid #000; padding:6px;">ใบเสร็จค่าใช้จ่าย</th></tr>
+    <tr><td style="border:1px solid #000; padding:6px;">ผู้เช่า</td><td style="border:1px solid #000; padding:6px;">${d.tenant_name || '-'}</td></tr>
+    <tr><td style="border:1px solid #000; padding:6px;">ห้อง</td><td style="border:1px solid #000; padding:6px;">${d.room || '-'}</td></tr>
+    <tr><td style="border:1px solid #000; padding:6px;">วันที่</td><td style="border:1px solid #000; padding:6px;">${d.date || '-'}</td></tr>
+    <tr><td colspan="2" style="border:1px solid #000; padding:6px;">ค่าไฟ ${d.elec_use} หน่วย = ${d.elec_cost.toFixed(2)}</td></tr>
+    <tr><td colspan="2" style="border:1px solid #000; padding:6px;">ค่าน้ำ ${d.water_use} หน่วย = ${d.water_cost.toFixed(2)}</td></tr>
+    <tr><td colspan="2" style="border:1px solid #000; padding:6px;">ค่าห้อง = ${d.room_cost.toFixed(2)}</td></tr>
+    <tr><th colspan="2" style="border:1px solid #000; padding:6px;">รวม ${d.total.toFixed(2)} บาท</th></tr>
+  </table>`;
+}
 
-เลขมิเตอร์ไฟ: ครั้งก่อน ${data.old_elec} ครั้งนี้ ${data.new_elec}
-เลขมิเตอร์น้ำ: ครั้งก่อน ${data.old_water} ครั้งนี้ ${data.new_water}
+// ===== ประวัติ =====
+function updateHistory() {
+  const h = document.getElementById('history');
+  h.innerHTML = '';
+  historyData.forEach((d, i) => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `<div>${formatBillTable(d)}</div>`;
+    h.appendChild(div);
+  });
+}
 
-ใช้ไฟ: ${data.elec_use} หน่วย × 7 บาท = ${data.elec_cost.toFixed(2)}
-ใช้น้ำ: ${data.water_use} หน่วย × 16 บาท = ${data.water_cost.toFixed(2)}
+// ===== อื่น ๆ =====
+function clearInputs() {
+  document.querySelectorAll('input').forEach(i => i.value = '');
+  document.getElementById('result').innerHTML = '';
+}
 
-ค่าห้อง: ${data.room_cost.toFixed(1)} บาท
+function clearHistory() {
+  historyData = [];
+  document.getElementById('history').innerHTML = '';
+}
 
-รวมทั้งสิ้น: ${data.total.toFixed(2)} บาท
-===========================`;
-    }
-
-    function updateHistory() {
-      const historyDiv = document.getElementById('history');
-      historyDiv.innerHTML = '';
-
-      historyData.forEach((d, index) => {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'history-item';
-        itemDiv.innerHTML = `<pre>${formatBill(d)}</pre>
-                             <button onclick='printSingle(${index})'>พิมพ์ใบเสร็จ</button>`;
-        historyDiv.appendChild(itemDiv);
-      });
-    }
-
-    function printSingle(index) {
-      const data = historyData[index];
-      const printContent = formatBill(data);
-
-      const win = window.open('', '', 'width=600,height=800');
-      win.document.write(`<!DOCTYPE html><html><head><title>ใบเสร็จ</title>
-        <style>
-          @page { size: A5 portrait; margin: 20mm; }
-          body { font-family: 'Courier New', monospace; white-space: pre-line; font-size: 16px; }
-        </style>
-      </head><body><pre>${printContent}</pre></body></html>`);
-      win.document.close();
-      win.print();
-    }
-
-    function clearHistory() {
-      historyData = [];
-      updateHistory();
-    }
-
-    function clearInputs() {
-      document.getElementById('tenant_name').value = '';
-      document.getElementById('room').value = '';
-      document.getElementById('date').value = '';
-      document.getElementById('old_elec').value = '';
-      document.getElementById('new_elec').value = '';
-      document.getElementById('old_water').value = '';
-      document.getElementById('new_water').value = '';
-      document.getElementById('room_cost').value = '';
-      document.getElementById('result').textContent = '';
-    }
-
-    function printPDF() {
-      if (!currentData.room && !currentData.tenant_name) { alert('กรุณากดคำนวณก่อนพิมพ์'); return; }
-
-      const printContent = formatBill(currentData);
-
-      const win = window.open('', '', 'width=600,height=800');
-      win.document.write(`<!DOCTYPE html><html><head><title>ใบเสร็จ</title>
-        <style>
-          @page { size: A5 portrait; margin: 20mm; }
-          body { font-family: 'Courier New', monospace; white-space: pre-line; font-size: 16px; }
-        </style>
-      </head><body><pre>${printContent}</pre></body></html>`);
-      win.document.close();
-      win.print();
-    }
-  </script>
+function printPDF() {
+  if (!currentData.total) { alert('กรุณากดคำนวณก่อน'); return; }
+  const win = window.open('', '', 'width=600,height=800');
+  win.document.write(`<!DOCTYPE html><html><head><title>ใบเสร็จ</title>
+    <style>
+      @page { size:A5 portrait; margin:20mm; }
+      body { font-family:'Courier New', monospace; }
+      table { width:100%; border-collapse:collapse; }
+      th,td { border:1px solid #000; padding:6px; }
+    </style>
+  </head><body>${formatBillTable(currentData)}</body></html>`);
+  win.document.close();
+  win.print();
+}
+</script>
 </body>
 </html>
